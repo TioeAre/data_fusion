@@ -1,0 +1,16 @@
+<launch>
+    <!-- Launch 3 nodes as below
+    At development stage, each node should be launched in a separated terminal to view the output -->
+
+    <!-- This node will launch the ROS driver for Realsense T265 -->
+    <include file="$(find realsense2_camera)/launch/rs_t265.launch"/>
+
+    <!-- This node will launch MAVROS -->
+    <include file="$(find mavros)/launch/apm.launch"/>
+
+    <include file="$(find ublox_gps)/launch/ublox_zed-f9p.launch"/>
+
+    <node pkg="data_fusion" type="data_fusion_node" name="data_fusion" output="screen">
+    </node>
+
+</launch>
