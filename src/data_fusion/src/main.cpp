@@ -2,6 +2,7 @@
 // Created by tioeare on 5/6/23.
 //
 #include <thread>
+
 #include "get_data.h"
 
 int main(int argc, char **argv) {
@@ -14,7 +15,7 @@ int main(int argc, char **argv) {
     std::thread read_of(&fusion::read_OF::read_serial, of);
 
     data.start();
-//    read_of.join();
+    //    read_of.join();
     ros::waitForShutdown();
     ros::shutdown();
 

@@ -3,9 +3,7 @@
 //
 #include "filter.h"
 
-fusion::filter::filter(float dtime2) : dtime(dtime2) {
-    init();
-}
+fusion::filter::filter(float dtime2) : dtime(dtime2) { init(); }
 
 void fusion::filter::update(std::vector<float> &data, const float &dtime1, const Eigen::MatrixXf &control_H1,
                             std::vector<double> &new_data) {
@@ -28,7 +26,7 @@ void fusion::filter::update(std::vector<float> &data, const float &dtime1, const
 }
 
 void fusion::filter::get_measure(std::vector<float> &data) {
-    Eigen::VectorXf measure = Eigen::Map<Eigen::VectorXf, Eigen::Unaligned>(data.data(), (long) data.size());
+    Eigen::VectorXf measure = Eigen::Map<Eigen::VectorXf, Eigen::Unaligned>(data.data(), (long)data.size());
     measure_x = control_H * measure;
     if (if_first) {
         hat_x = measure_x;
@@ -36,16 +34,11 @@ void fusion::filter::get_measure(std::vector<float> &data) {
 }
 
 void fusion::filter::init(const float &dtime1) {
-    control_A << 1, 0, 0, dtime1, 0, 0,
-            0, 1, 0, 0, dtime1, 0,
-            0, 0, 1, 0, 0, dtime1,
-            0, 0, 0, 1, 0, 0,
-            0, 0, 0, 0, 1, 0,
-            0, 0, 0, 0, 0, 1;
+    control_A << 1, 0, 0, dtime1, 0, 0, 0, 1, 0, 0, dtime1, 0, 0, 0, 1, 0, 0, dtime1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1,
+        0, 0, 0, 0, 0, 0, 1;
 }
 
 void fusion::filter::init() {
-
     hat_x.resize(6);
     hat_x.setZero();
     measure_x.resize(6);
@@ -63,53 +56,22 @@ void fusion::filter::init() {
     error_v.resize(6, 6);
     error_w.resize(6, 6);
 
-    control_H << 1. / 3, 0, 0, 1. / 3, 0, 0, 1. / 3, 0, 0, 0, 0, 0, 0, 0,
-            0, 1. / 3, 0, 0, 1. / 3, 0, 0, 1. / 3, 0, 0, 0, 0, 0, 0,
-            0, 0, 1. / 3, 0, 0, 1. / 3, 0, 0, 1. / 3, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 1. / 2, 0, 0, 1. / 2, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1. / 2, 0, 0, 1. / 2,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0;
+    control_H << 1. / 3, 0, 0, 1. / 3, 0, 0, 1. / 3, 0, 0, 0, 0, 0, 0, 0, 0, 1. / 3, 0, 0, 1. / 3, 0, 0, 1. / 3, 0, 0,
+        0, 0, 0, 0, 0, 0, 1. / 3, 0, 0, 1. / 3, 0, 0, 1. / 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1. / 2, 0, 0,
+        1. / 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1. / 2, 0, 0, 1. / 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0;
 
-    control_A << 1, 0, 0, dtime, 0, 0,
-            0, 1, 0, 0, dtime, 0,
-            0, 0, 1, 0, 0, dtime,
-            0, 0, 0, 1, 0, 0,
-            0, 0, 0, 0, 1, 0,
-            0, 0, 0, 0, 0, 1;
-    control_h << 1, 0, 0, 0, 0, 0,
-            0, 1, 0, 0, 0, 0,
-            0, 0, 1, 0, 0, 0,
-            0, 0, 0, 1, 0, 0,
-            0, 0, 0, 0, 1, 0,
-            0, 0, 0, 0, 0, 1;
-    control_P << 1, 0, 0, 0, 0, 0,
-            0, 1, 0, 0, 0, 0,
-            0, 0, 1, 0, 0, 0,
-            0, 0, 0, 1, 0, 0,
-            0, 0, 0, 0, 1, 0,
-            0, 0, 0, 0, 0, 1;
-    control_Q << 1, 0, 0, 0, 0, 0,
-            0, 1, 0, 0, 0, 0,
-            0, 0, 1, 0, 0, 0,
-            0, 0, 0, 1, 0, 0,
-            0, 0, 0, 0, 1, 0,
-            0, 0, 0, 0, 0, 1;
-    control_R << 1, 0, 0, 0, 0, 0,
-            0, 1, 0, 0, 0, 0,
-            0, 0, 1, 0, 0, 0,
-            0, 0, 0, 1, 0, 0,
-            0, 0, 0, 0, 1, 0,
-            0, 0, 0, 0, 0, 1;
-    error_v << 1, 0, 0, 0, 0, 0,
-            0, 1, 0, 0, 0, 0,
-            0, 0, 1, 0, 0, 0,
-            0, 0, 0, 1, 0, 0,
-            0, 0, 0, 0, 1, 0,
-            0, 0, 0, 0, 0, 1;
-    error_w << 1, 0, 0, 0, 0, 0,
-            0, 1, 0, 0, 0, 0,
-            0, 0, 1, 0, 0, 0,
-            0, 0, 0, 1, 0, 0,
-            0, 0, 0, 0, 1, 0,
-            0, 0, 0, 0, 0, 1;
+    control_A << 1, 0, 0, dtime, 0, 0, 0, 1, 0, 0, dtime, 0, 0, 0, 1, 0, 0, dtime, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0,
+        0, 0, 0, 0, 0, 1;
+    control_h << 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+        0, 1;
+    control_P << 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+        0, 1;
+    control_Q << 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+        0, 1;
+    control_R << 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+        0, 1;
+    error_v << 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+        1;
+    error_w << 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+        1;
 }
