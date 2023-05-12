@@ -8,9 +8,9 @@ fusion::Data::Data() : nh("~"), spinner(0), listener(buffer), pose_filter(0.01) 
     t265_pose_sub = new message_filters::Subscriber<nav_msgs::Odometry>(nh, t265_pose_sub_topic, queueSize);
     OF_sub = new message_filters::Subscriber<data_fusion::OpticalFlow_msg>(nh, OF_sub_topic, queueSize);
     imu_sub = new message_filters::Subscriber<sensor_msgs::Imu>(nh, imu_sub_topic, queueSize);
-    syncApproximate = new message_filters::Synchronizer<ApproximateSyncPolicy>(ApproximateSyncPolicy(queueSize),
-                                                                               *t265_pose_sub, *OF_sub, *imu_sub);
-    syncApproximate->registerCallback(boost::bind(&fusion::Data::call_back, this, _1, _2, _3));
+    syncTime = new message_filters::Synchronizer<TimeSyncPolicy>(TimeSyncPolicy(queueSize),
+                                                                 *t265_pose_sub, *OF_sub, *imu_sub);
+    syncTime->registerCallback(boost::bind(&fusion::Data::call_back, this, _1, _2, _3));
     gps_sub = nh.subscribe<sensor_msgs::NavSatFix>(gps_sub_topic, queueSize,
                                                    boost::bind(&fusion::Data::gps_call_back, this, _1));
 

@@ -97,13 +97,13 @@ private:
     int queueSize = 10;
 
     // 订阅话题变量
-    typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry, data_fusion::OpticalFlow_msg,
+    typedef message_filters::sync_policies::ExactTime<nav_msgs::Odometry, data_fusion::OpticalFlow_msg,
                                                             sensor_msgs::Imu>
-        ApproximateSyncPolicy;
+        TimeSyncPolicy;
     message_filters::Subscriber<nav_msgs::Odometry> *t265_pose_sub;
     message_filters::Subscriber<data_fusion::OpticalFlow_msg> *OF_sub;
     message_filters::Subscriber<sensor_msgs::Imu> *imu_sub;
-    message_filters::Synchronizer<ApproximateSyncPolicy> *syncApproximate;
+    message_filters::Synchronizer<TimeSyncPolicy> *syncTime;
     ros::Subscriber gps_sub;
     ros::Publisher pose_pub;
 
