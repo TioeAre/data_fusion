@@ -122,9 +122,9 @@ void fusion::Data::call_back(const nav_msgs::Odometry::ConstPtr &t265_pose_msg,
     pose_x.push_back({t265_dpose[0], OF_dpose[0], 0.});
     pose_y.push_back({t265_dpose[1], OF_dpose[1], 0.});
     pose_z.push_back({t265_dpose[2], OF_dpose[2], 0.});
-    vel_x.push_back({t265_pose_msg->twist.twist.linear.x, OF_msg->distance * compensated_OF_pub_msg.point.x, 0.});
-    vel_y.push_back({t265_pose_msg->twist.twist.linear.y, OF_msg->distance * compensated_OF_pub_msg.point.y, 0.});
-    vel_z.push_back({t265_pose_msg->twist.twist.linear.z, 0., 0.});
+    vel_x.push_back({t265_dvel[0], OF_dvel[0], 0.});
+    vel_y.push_back({t265_dvel[1], OF_dvel[1], 0.});
+    vel_z.push_back({t265_dvel[2], 0., 0.});
     state.push_back({t265_pose_msg->pose.covariance[35], (double)OF_msg->strength, 0});
     if (pose_x.size() >= 50) {
         all_solve(pose_x, pose_y, pose_z, vel_x, vel_y, vel_z, state);
