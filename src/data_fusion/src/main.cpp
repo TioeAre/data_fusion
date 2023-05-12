@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
     fusion::Data data;
 
     auto *of = new fusion::read_OF();
-    std::thread read_of(&fusion::read_OF::read_serial, of);
+    // std::thread read_of(&fusion::read_OF::read_serial, of);
 
     data.start();
     //    read_of.join();

@@ -13,8 +13,8 @@ fusion::Data::Data() : nh("~"), spinner(0), listener(buffer), pose_filter(0.01) 
     syncApproximate->registerCallback(boost::bind(&fusion::Data::call_back, this, _1, _2, _3));
     gps_sub = nh.subscribe<sensor_msgs::NavSatFix>(gps_sub_topic, queueSize,
                                                    boost::bind(&fusion::Data::gps_call_back, this, _1));
-    pose_pub = nh.advertise<geometry_msgs::PoseStamped>(pose_pub_topic, queueSize);
 
+    pose_pub = nh.advertise<geometry_msgs::PoseStamped>(pose_pub_topic, queueSize);
     compensated_OF_pub = nh.advertise<geometry_msgs::PointStamped>(compensated_OF_pub_topic, queueSize);
     OF_sum_pub = nh.advertise<geometry_msgs::PointStamped>(OF_sum_pub_topic, queueSize);
     origin_dOF_pub = nh.advertise<geometry_msgs::PointStamped>(origin_dOF_pub_topic, queueSize);
@@ -70,9 +70,9 @@ void fusion::Data::gps_call_back(const sensor_msgs::NavSatFix::ConstPtr &gps_msg
     pose_gps_y.push_back({t265_dpose[1], OF_dpose[1], gps_dpose[1]});
     pose_gps_z.push_back({t265_dpose[2], OF_dpose[2], gps_dpose[2]});
 
-    vel_gps_x.push_back({vel_x.back()[0], vel_x.back()[1], 0});
-    vel_gps_y.push_back({vel_y.back()[0], vel_y.back()[1], 0});
-    vel_gps_z.push_back({vel_z.back()[0], 0, 0});
+    vel_gps_x.push_back({vel_x.back()[0], vel_x.back()[1], 0.});
+    vel_gps_y.push_back({vel_y.back()[0], vel_y.back()[1], 0.});
+    vel_gps_z.push_back({vel_z.back()[0], 0., 0.});
     state_gps.push_back({state.back()[0], state.back()[1], gps_msg->position_covariance[8]});
     if (pose_gps_x.size() >= 50) {
         all_solve(pose_gps_x, pose_gps_y, pose_gps_z, vel_gps_x, vel_gps_y, vel_gps_z, state_gps);
@@ -119,12 +119,12 @@ void fusion::Data::call_back(const nav_msgs::Odometry::ConstPtr &t265_pose_msg,
     OF_dvel[0] = OF_msg->distance * compensated_OF_pub_msg.point.x - OF_last_speed[0];
     OF_dvel[1] = OF_msg->distance * compensated_OF_pub_msg.point.y - OF_last_speed[1];
 
-    pose_x.push_back({t265_dpose[0], OF_dpose[0], 0});
-    pose_y.push_back({t265_dpose[1], OF_dpose[1], 0});
-    pose_z.push_back({t265_dpose[2], OF_dpose[2], 0});
-    vel_x.push_back({t265_pose_msg->twist.twist.linear.x, OF_msg->distance * compensated_OF_pub_msg.point.x, 0});
-    vel_y.push_back({t265_pose_msg->twist.twist.linear.y, OF_msg->distance * compensated_OF_pub_msg.point.y, 0});
-    vel_z.push_back({t265_pose_msg->twist.twist.linear.z, 0, 0});
+    pose_x.push_back({t265_dpose[0], OF_dpose[0], 0.});
+    pose_y.push_back({t265_dpose[1], OF_dpose[1], 0.});
+    pose_z.push_back({t265_dpose[2], OF_dpose[2], 0.});
+    vel_x.push_back({t265_pose_msg->twist.twist.linear.x, OF_msg->distance * compensated_OF_pub_msg.point.x, 0.});
+    vel_y.push_back({t265_pose_msg->twist.twist.linear.y, OF_msg->distance * compensated_OF_pub_msg.point.y, 0.});
+    vel_z.push_back({t265_pose_msg->twist.twist.linear.z, 0., 0.});
     state.push_back({t265_pose_msg->pose.covariance[35], (double)OF_msg->strength, 0});
     if (pose_x.size() >= 50) {
         all_solve(pose_x, pose_y, pose_z, vel_x, vel_y, vel_z, state);
@@ -208,8 +208,8 @@ void fusion::Data::transform_tf_to_UAV(const nav_msgs::Odometry::ConstPtr &t265_
 
     // 补偿光流速度并积分出光流测出的位移
     dtime = (OF_msg->header.stamp - OF_last_point.header.stamp).toSec();
-    double of_x = OF_msg->distance * dtime * compensated_OF_pub_msg.point.x;
-    double of_y = OF_msg->distance * dtime * compensated_OF_pub_msg.point.y;
+    double of_x = -OF_msg->distance * dtime * compensated_OF_pub_msg.point.x;  // TODO:验证
+    double of_y = -OF_msg->distance * dtime * compensated_OF_pub_msg.point.y;  // TODO:
     OF_point.header = OF_UAV_point.header;
     OF_point.header.frame_id = "OF";
     OF_point.point.x = of_x + OF_last_point.point.x;
@@ -256,9 +256,9 @@ void fusion::Data::transform_tf_to_UAV(const sensor_msgs::NavSatFix::ConstPtr &g
 }
 
 std::vector<float> fusion::Data::solve_ceres(std::deque<std::vector<double>> data, std::deque<double> y) {
-    double abc[3] = {1. / 3, 1. / 3, 1. / 3};
+    double abc[3] = {0.5, 0.25, 0.25};
     ceres::Problem problem;
-    for (int i = 0; i < data.size(); i++) {
+    for (int i = 0; i < data.size() && i < y.size(); i++) {
         problem.AddResidualBlock(
             new ceres::AutoDiffCostFunction<COST, 1, 3>(new COST(data[i][0], data[i][1], data[i][2], y[i])), nullptr,
             abc);
@@ -276,18 +276,20 @@ std::deque<double> fusion::Data::calY(std::deque<std::vector<double>> data, std:
     std::deque<double> y;
     for (int i = 0; i < data.size(); i++) {
         std::vector<double> sum;
-        if (state1[i][0] < 0.01 && data[i][0] != 0 && !if_vz && abs(data[i][1]) > 0.03 && data[i][0] < 5) {
+        if (state1[i][0] <= 0.01 && data[i][0] != 0. && !if_vz && abs(data[i][1]) > 0.03 && data[i][0] < 5) {
             sum.push_back(data[i][0]);
-        } else if (state1[i][1] > 120 && data[i][1] != 0 && data[i][1] < 5) {  // 光流强度
+        }
+        if (state1[i][1] > 120 && data[i][1] != 0. && data[i][1] < 5) {  // 光流强度
             sum.push_back(data[i][1]);
-        } else if (state1[i][2] < 15 && data[i][2] != 0 && data[i][2] < 5) {  // gps协方差
+        }
+        if (state1[i][2] < 15 && data[i][2] != 0. && data[i][2] < 5) {  // gps协方差
             sum.push_back(data[i][2]);
         }
         double y1 = 0;
         for (auto &&one : sum) {
             y1 += one;
         }
-        y.push_back(y1 / (double)sum.size());
+        y.push_back(y1 / (sum.size() ? sum.size() : 1));
     }
     return y;
 }
@@ -325,7 +327,7 @@ void fusion::Data::all_solve(const std::deque<std::vector<double>> &pose_x1,
     fusion_displace_pub_msg.point.z = after_filter_pose[2];
 
     pub_pose[0] += after_filter_pose[0];  // = t265_UAV_last_point.point.x
-    pub_pose[1] += after_filter_pose[1];  //= t265_UAV_last_point.point.y
+    pub_pose[1] += after_filter_pose[1];  // = t265_UAV_last_point.point.y
     pub_pose[2] += after_filter_pose[2];  // = t265_UAV_last_point.point.z
 
     pub_data();
